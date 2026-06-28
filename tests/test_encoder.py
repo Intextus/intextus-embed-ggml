@@ -61,7 +61,8 @@ def test_encoder_init_with_directory(mock_cpp_encoder_cls):
         False,          # do_lower_case
         0,              # num_threads
         101,            # cls_token_id
-        102             # sep_token_id
+        102,            # sep_token_id
+        0               # pooling_type (mean)
     )
     
     temp_dir.cleanup()
@@ -93,4 +94,17 @@ def test_different_quantizations():
     texts = ["testing quantization loading"]
     embs = encoder.encode(texts)
     assert embs.shape == (1, 384)
+
+def test_bge_embedding_end_to_end():
+    # End-to-end validation with the real BGE C++ engine and GGUF model (CLS pooling)
+    print("\nRunning real BGE embedding test...")
+    encoder = DenseEncoder("BAAI/bge-small-en-v1.5", quantization="Q8_0")
+    texts = ["hello world", "bge model uses cls pooling"]
+    embs = encoder.encode(texts, max_length=128, normalize=True)
+    
+    assert embs.shape == (2, 384)
+    norm = np.linalg.norm(embs[0])
+    assert np.allclose(norm, 1.0, atol=1e-5)
+    assert not np.allclose(embs[0], 0.0)
+    assert not np.allclose(embs[0], embs[1])
 
