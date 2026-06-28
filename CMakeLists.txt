@@ -55,6 +55,7 @@ set(LLAMA_BUILD_EXAMPLES OFF CACHE INTERNAL "")
 set(LLAMA_BUILD_SERVER OFF CACHE INTERNAL "")
 set(GGML_OPENMP OFF CACHE INTERNAL "")
 set(GGML_NATIVE ON CACHE INTERNAL "")  # Compile with -march=native for AVX2/AVX-512/NEON
+set(GGML_METAL OFF CACHE INTERNAL "")   # Disable Metal GPU backend on macOS to prevent runtime shader dependency issues
 
 FetchContent_Declare(
     llama_cpp
