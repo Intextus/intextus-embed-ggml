@@ -165,5 +165,6 @@ scripts/benchmark.py
 
 # Local temporary and build artifacts
 all-MiniLM-L6-v2-GGUF/
+bge-small-en-v1.5-GGUF/
 tmp/
 _cmake_build/

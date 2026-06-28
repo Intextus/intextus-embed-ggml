@@ -50,12 +50,13 @@ endif()
 
 # 2. Fetch llama.cpp
 # Disable examples/tests to speed up build
-set(LLAMA_BUILD_TESTS OFF CACHE INTERNAL "")
-set(LLAMA_BUILD_EXAMPLES OFF CACHE INTERNAL "")
-set(LLAMA_BUILD_SERVER OFF CACHE INTERNAL "")
-set(GGML_OPENMP OFF CACHE INTERNAL "")
-set(GGML_NATIVE ON CACHE INTERNAL "")  # Compile with -march=native for AVX2/AVX-512/NEON
-set(GGML_METAL OFF CACHE INTERNAL "")   # Disable Metal GPU backend on macOS to prevent runtime shader dependency issues
+set(LLAMA_BUILD_TESTS OFF CACHE BOOL "Disable tests" FORCE)
+set(LLAMA_BUILD_EXAMPLES OFF CACHE BOOL "Disable examples" FORCE)
+set(LLAMA_BUILD_SERVER OFF CACHE BOOL "Disable server" FORCE)
+set(GGML_OPENMP OFF CACHE BOOL "Disable OpenMP" FORCE)
+set(GGML_NATIVE ON CACHE BOOL "Enable native optimization" FORCE)
+set(GGML_METAL OFF CACHE BOOL "Disable Metal" FORCE)
+set(LLAMA_METAL OFF CACHE BOOL "Disable Metal" FORCE)
 
 FetchContent_Declare(
     llama_cpp

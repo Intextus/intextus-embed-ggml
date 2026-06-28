@@ -39,10 +39,12 @@ public:
         bool do_lower_case,
         int num_threads,
         int cls_token_id,
-        int sep_token_id
+        int sep_token_id,
+        int pooling_type
     ) : do_lower_case_(do_lower_case),
         cls_token_id_(cls_token_id),
-        sep_token_id_(sep_token_id) {
+        sep_token_id_(sep_token_id),
+        pooling_type_(pooling_type) {
 
         // Load tokenizer
         std::string tok_blob = LoadBytesFromFile(tokenizer_path);
@@ -147,7 +149,7 @@ public:
                     batch.pos[s] = s;
                     batch.n_seq_id[s] = 1;
                     batch.seq_id[s][0] = 0;
-                    batch.logits[s] = true;
+                    batch.logits[s] = (pooling_type_ == 1) ? (s == 0) : true;
                 }
 
                 if (llama_decode(llama_ctx_, batch) != 0) {
@@ -156,23 +158,35 @@ public:
                     throw std::runtime_error("llama_decode failed");
                 }
 
-                // Mean Pooling over decoded token embeddings
+                // Pooling over decoded token embeddings
                 float* out_vec = result_data + b * output_dim;
-                for (size_t s = 0; s < decode_len; ++s) {
-                    const float * embd = llama_get_embeddings_ith(llama_ctx_, s);
+                if (pooling_type_ == 1) {
+                    // CLS Pooling
+                    const float * embd = llama_get_embeddings_ith(llama_ctx_, 0);
                     if (!embd) {
                         llama_batch_free(batch);
                         delete[] result_data;
-                        throw std::runtime_error("Failed to get embeddings for token");
+                        throw std::runtime_error("Failed to get embeddings for CLS token");
                     }
-                    for (size_t k = 0; k < output_dim; ++k) {
-                        out_vec[k] += embd[k];
+                    std::memcpy(out_vec, embd, output_dim * sizeof(float));
+                } else {
+                    // Mean Pooling
+                    for (size_t s = 0; s < decode_len; ++s) {
+                        const float * embd = llama_get_embeddings_ith(llama_ctx_, s);
+                        if (!embd) {
+                            llama_batch_free(batch);
+                            delete[] result_data;
+                            throw std::runtime_error("Failed to get embeddings for token");
+                        }
+                        for (size_t k = 0; k < output_dim; ++k) {
+                            out_vec[k] += embd[k];
+                        }
                     }
-                }
 
-                float scale = 1.0f / static_cast<float>(decode_len);
-                for (size_t k = 0; k < output_dim; ++k) {
-                    out_vec[k] *= scale;
+                    float scale = 1.0f / static_cast<float>(decode_len);
+                    for (size_t k = 0; k < output_dim; ++k) {
+                        out_vec[k] *= scale;
+                    }
                 }
 
                 // L2 Normalization
@@ -207,6 +221,7 @@ private:
     bool do_lower_case_;
     int cls_token_id_ = -1;
     int sep_token_id_ = -1;
+    int pooling_type_ = 0; // 0 = Mean, 1 = CLS
     int model_embd_dim_ = 0;
 };
 
@@ -214,10 +229,11 @@ NB_MODULE(_core, m) {
     m.doc() = "intextus native C++ dense embedding core (GGUF-only)";
 
     nb::class_<IntextusEncoder>(m, "IntextusEncoder")
-        .def(nb::init<const std::string&, const std::string&, bool, int, int, int>(),
+        .def(nb::init<const std::string&, const std::string&, bool, int, int, int, int>(),
             nb::arg("gguf_path"), nb::arg("tokenizer_path"),
             nb::arg("do_lower_case"), nb::arg("num_threads"),
-            nb::arg("cls_token_id"), nb::arg("sep_token_id"))
+            nb::arg("cls_token_id"), nb::arg("sep_token_id"),
+            nb::arg("pooling_type"))
         .def("encode", &IntextusEncoder::encode,
             nb::arg("texts"), nb::arg("max_length"), nb::arg("normalize"));
 }

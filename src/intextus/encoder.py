@@ -14,7 +14,8 @@ class DenseEncoder:
         num_threads: int = 0,
         cls_token_id: int = None,
         sep_token_id: int = None,
-        quantization: str = "Q8_0"
+        quantization: str = "Q8_0",
+        pooling_mode: str = None
     ):
         """
         Inference engine for running dense embedding GGUF models 
@@ -69,6 +70,8 @@ class DenseEncoder:
             repo_id = model_name_or_path
             if repo_id == "sentence-transformers/all-MiniLM-L6-v2":
                 repo_id = "intextus/all-MiniLM-L6-v2-GGUF"
+            elif repo_id == "BAAI/bge-small-en-v1.5":
+                repo_id = "intextus/bge-small-en-v1.5-GGUF"
                 
             try:
                 from huggingface_hub import HfApi, hf_hub_download
@@ -159,6 +162,21 @@ class DenseEncoder:
         cls_token_id = cls_token_id if cls_token_id is not None else default_cls_id
         sep_token_id = sep_token_id if sep_token_id is not None else default_sep_id
 
+        # Determine pooling mode and type
+        if pooling_mode is None:
+            if "bge" in model_name_or_path.lower():
+                pooling_mode = "cls"
+            else:
+                pooling_mode = "mean"
+        
+        pooling_mode = pooling_mode.lower()
+        if pooling_mode == "cls":
+            pooling_type = 1
+        elif pooling_mode == "mean":
+            pooling_type = 0
+        else:
+            raise ValueError(f"Unsupported pooling_mode: {pooling_mode}. Must be 'cls' or 'mean'.")
+
         # Initialize C++ core encoder with direct GGUF and tokenizer path
         self._encoder = CppIntextusEncoder(
             gguf_path,
@@ -166,7 +184,8 @@ class DenseEncoder:
             do_lower_case,
             num_threads,
             cls_token_id,
-            sep_token_id
+            sep_token_id,
+            pooling_type
         )
 
     def encode(self, texts: Union[str, List[str]], max_length: int = 512, normalize: bool = True) -> np.ndarray:
