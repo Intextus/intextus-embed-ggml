@@ -1,0 +1,191 @@
+name: Publish to PyPI
+
+on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - '**.md'
+      - 'LICENSE'
+      - '.gitignore'
+
+
+jobs:
+  test:
+    name: Run Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install dependencies and build extension
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest numpy huggingface-hub nanobind scikit-build-core
+          pip install -e .
+
+      - name: Run Tests
+        run: |
+          pytest tests/
+
+  bump_version:
+    name: Increment and Commit Version
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      new_sha: ${{ steps.commit.outputs.sha }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Increment Version
+        run: |
+          python scripts/increment_version.py
+
+      - name: Commit version bump back to GitHub
+        id: commit
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add pyproject.toml
+          if git diff --quiet && git diff --staged --quiet; then
+            echo "No version changes to commit."
+          else
+            git commit -m "chore: bump version [skip ci]"
+            git push
+          fi
+          echo "sha=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
+
+  build_wheels:
+    name: Build wheels on ${{ matrix.os }} (${{ matrix.cibw_archs }})
+    needs: bump_version
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            cibw_archs: "x86_64"
+          - os: ubuntu-24.04-arm
+            cibw_archs: "aarch64"
+          - os: macos-latest
+            cibw_archs: "arm64"
+          - os: windows-latest
+            cibw_archs: "AMD64"
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.bump_version.outputs.new_sha }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install cibuildwheel
+        run: |
+          python -m pip install --upgrade pip
+          pip install cibuildwheel==2.22.0
+
+      - name: Build wheels
+        run: |
+          python -m cibuildwheel --output-dir wheelhouse
+        env:
+          MACOSX_DEPLOYMENT_TARGET: "13.3"
+          CIBW_BUILD: "cp39-* cp310-* cp311-* cp312-* cp313-* cp314-*"
+          CIBW_ARCHS: ${{ matrix.cibw_archs }}
+          CIBW_SKIP: "*-win32 *-manylinux_i686 *musllinux*"
+          CIBW_BEFORE_BUILD: "env && pip install nanobind scikit-build-core"
+          CIBW_BEFORE_ALL_LINUX: "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y"
+          CIBW_ENVIRONMENT_LINUX: PATH="$PATH:/root/.cargo/bin" CC=gcc CXX=g++ CC_aarch64_unknown_linux_gnu=gcc CC_aarch64-unknown-linux-gnu=gcc CXX_aarch64_unknown_linux_gnu=g++ CXX_aarch64_unknown_linux_gnu=g++ AR_aarch64_unknown_linux_gnu=ar AR_aarch64-unknown-linux-gnu=ar
+          CIBW_MANYLINUX_X86_64_IMAGE: "manylinux_2_28"
+          CIBW_MANYLINUX_AARCH64_IMAGE: "manylinux_2_28"
+          CIBW_TEST_REQUIRES: "pytest numpy huggingface-hub"
+          CIBW_TEST_COMMAND: "pytest {project}/tests"
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: cibuildwheel-wheels-${{ matrix.os }}-${{ strategy.job-index }}
+          path: ./wheelhouse/*.whl
+
+  build_sdist:
+    name: Build source distribution
+    needs: bump_version
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.bump_version.outputs.new_sha }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Build sdist
+        run: |
+          pip install build
+          python -m build --sdist --outdir dist
+
+      - name: Upload sdist artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cibuildwheel-sdist
+          path: dist/*.tar.gz
+
+  publish:
+    name: Publish to PyPI and GitHub Releases
+    needs: [build_wheels, build_sdist]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write  # Required to create git tags and releases
+      id-token: write  # Required for OIDC Trusted Publisher authentication
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Get Version
+        id: get_version
+        run: |
+          VERSION=$(python -c "import re; print(re.search(r'version\s*=\s*\"([^\"]+)\"', open('pyproject.toml').read()).group(1))")
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: cibuildwheel-*
+          path: dist
+          merge-multiple: true
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: dist
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.get_version.outputs.version }}
+          name: Release v${{ steps.get_version.outputs.version }}
+          files: dist/*
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
