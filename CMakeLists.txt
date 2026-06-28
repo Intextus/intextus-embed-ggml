@@ -54,7 +54,7 @@ set(LLAMA_BUILD_TESTS OFF CACHE BOOL "Disable tests" FORCE)
 set(LLAMA_BUILD_EXAMPLES OFF CACHE BOOL "Disable examples" FORCE)
 set(LLAMA_BUILD_SERVER OFF CACHE BOOL "Disable server" FORCE)
 set(GGML_OPENMP OFF CACHE BOOL "Disable OpenMP" FORCE)
-set(GGML_NATIVE ON CACHE BOOL "Enable native optimization" FORCE)
+set(GGML_NATIVE OFF CACHE BOOL "Enable native optimization")
 set(GGML_METAL OFF CACHE BOOL "Disable Metal" FORCE)
 set(LLAMA_METAL OFF CACHE BOOL "Disable Metal" FORCE)
 

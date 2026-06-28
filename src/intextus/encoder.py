@@ -177,6 +177,23 @@ class DenseEncoder:
         else:
             raise ValueError(f"Unsupported pooling_mode: {pooling_mode}. Must be 'cls' or 'mean'.")
 
+        # Read and modify tokenizer.json to disable padding if configured
+        self._temp_tokenizer_file = None
+        try:
+            import json
+            import tempfile
+            with open(tokenizer_path, 'r', encoding='utf-8') as f:
+                tok_data = json.load(f)
+            if tok_data.get("padding") is not None:
+                tok_data["padding"] = None
+                fd, temp_path = tempfile.mkstemp(suffix=".json", prefix="intextus_tokenizer_")
+                with os.fdopen(fd, 'w', encoding='utf-8') as f_out:
+                    json.dump(tok_data, f_out)
+                self._temp_tokenizer_file = temp_path
+                tokenizer_path = temp_path
+        except Exception:
+            pass
+
         # Initialize C++ core encoder with direct GGUF and tokenizer path
         self._encoder = CppIntextusEncoder(
             gguf_path,
@@ -187,6 +204,13 @@ class DenseEncoder:
             sep_token_id,
             pooling_type
         )
+
+    def __del__(self):
+        if getattr(self, "_temp_tokenizer_file", None) and os.path.exists(self._temp_tokenizer_file):
+            try:
+                os.remove(self._temp_tokenizer_file)
+            except Exception:
+                pass
 
     def encode(self, texts: Union[str, List[str]], max_length: int = 512, normalize: bool = True) -> np.ndarray:
         """
