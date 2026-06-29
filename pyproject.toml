@@ -5,7 +5,7 @@ build-backend = "scikit_build_core.build"
 [project]
 name = "intextus-embed-ggml"
 version = "0.1.6"
-description = "A lightweight, zero-PyTorch GGML/GGUF encoder for generic ColBERT models."
+description = "A lightweight, zero-PyTorch GGML/GGUF encoder for generic dense embedding models."
 readme = "README.md"
 requires-python = ">=3.9"
 license = { text = "MIT" }
@@ -15,8 +15,8 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 keywords = [
-    "colbert",
-    "late-interaction",
+    "bert",
+    "bge",
     "ggml",
     "gguf",
     "llama.cpp",
@@ -36,3 +36,11 @@ cmake.build-type = "Release"
 # This tells scikit-build-core to look inside the 'src' directory for your python packages
 wheel.packages = ["src/intextus"]
 sdist.include = ["src/intextus/*", "CMakeLists.txt"]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0.0",
+]
+benchmark = [
+    "fastembed>=0.3.4",
+]

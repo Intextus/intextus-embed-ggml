@@ -49,11 +49,16 @@ model = DenseEncoder("./models/all-MiniLM-L6-v2-Q8_0.gguf")
 - `quantization`: Preferred quantization format (e.g., `"Q8_0"`, `"F16"`, `"F32"`, `"Q4_0"`). Defaults to `"Q8_0"`.
 - `pooling_mode`: Pooling strategy to use (`"mean"` or `"cls"`). Defaults to `None` (which auto-detects based on the model name).
 
-## Benchmarks
+## Benchmarks & Reproducibility
 
-You can reproduce these benchmarks on your system by running:
+To reproduce the latency, memory footprint (RSS), and quantization accuracy results, run the scripts directly using `uv`:
+
 ```bash
-python scripts/benchmark.py
+# 1. Run the latency and memory benchmark (automatically manages fastembed dependency)
+uv run --group benchmark python scripts/benchmark.py
+
+# 2. Run the quantization accuracy benchmark
+uv run python scripts/benchmark_accuracy.py
 ```
 
 Measured on AMD64 CPU (Linux) comparing `intextus` (Q8_0 quantization) against `fastembed` (ONNX Runtime):
@@ -97,6 +102,19 @@ Measured on AMD64 CPU (Linux) comparing `intextus` (Q8_0 quantization) against `
 | 8 | 3.25 ms | 2.31 ms | **308.1 sent/s** | 432.3 sent/s |
 | 32 | 3.36 ms | 2.18 ms | **297.9 sent/s** | 459.5 sent/s |
 | 128 | 3.37 ms | 3.51 ms | **297.1 sent/s** | 285.2 sent/s |
+
+### Quantization Accuracy vs. F32 Baseline
+
+Below is the cosine similarity accuracy comparison of different quantization formats vs the unquantized `F32` baseline, measured over a set of diverse test sentences:
+
+| Quantization | Size (MiniLM) | Cosine Similarity vs. F32 | Status / Recommendation |
+| :--- | :---: | :---: | :--- |
+| **`F32`** | 86.7 MiB | 1.000000 | Baseline |
+| **`F16`** | 43.4 MiB | 1.000000 | Near Lossless |
+| **`Q8_0`** | 23.5 MiB | 0.999659 | **Highly Recommended** (virtually lossless, 3.7x smaller) |
+| **`Q4_0`** | 18.4 MiB | 0.970772 | Not Recommended (noticeable drop in semantic accuracy) |
+
+> 💡 **Tip:** For small embedding models like MiniLM and BGE-small, 8-bit quantization (`Q8_0`) is the absolute sweet spot, retaining **99.96% accuracy** while reducing memory footprint and load times. Lower bit-depths like 4-bit (`Q4_0`) suffer noticeable quality loss due to the small parameter capacity of these architectures.
 
 ## Advanced: Compile from Source (Hardware Acceleration)
 
