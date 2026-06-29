@@ -49,6 +49,55 @@ model = DenseEncoder("./models/all-MiniLM-L6-v2-Q8_0.gguf")
 - `quantization`: Preferred quantization format (e.g., `"Q8_0"`, `"F16"`, `"F32"`, `"Q4_0"`). Defaults to `"Q8_0"`.
 - `pooling_mode`: Pooling strategy to use (`"mean"` or `"cls"`). Defaults to `None` (which auto-detects based on the model name).
 
+## Benchmarks
+
+You can reproduce these benchmarks on your system by running:
+```bash
+python scripts/benchmark.py
+```
+
+Measured on AMD64 CPU (Linux) comparing `intextus` (Q8_0 quantization) against `fastembed` (ONNX Runtime):
+
+### Model: sentence-transformers/all-MiniLM-L6-v2 (Mean Pooling)
+
+| Metric | intextus (Q8_0) | fastembed (ONNX) | Speedup / Savings |
+| :--- | :---: | :---: | :---: |
+| Model Load Time | 1513.8 ms | 439.2 ms | 0.29x |
+| Single Latency (Mean) | 2.03 ms | 8.73 ms | **4.30x** |
+| Single Latency (p50) | 1.98 ms | 8.13 ms | **4.10x** |
+| Single Latency (p95) | 2.40 ms | 12.59 ms | - |
+| Peak RSS Memory | 121.5 MB | 852.9 MB | **7.02x less** |
+
+**Batch Latency & Throughput**
+
+| Batch Size | intextus Latency (per-sent) | fastembed Latency (per-sent) | intextus Throughput | fastembed Throughput |
+| :---: | :---: | :---: | :---: | :---: |
+| 1 | 1.44 ms | 9.43 ms | **692.8 sent/s** | 106.0 sent/s |
+| 4 | 1.56 ms | 14.39 ms | **639.9 sent/s** | 69.5 sent/s |
+| 8 | 1.64 ms | 13.59 ms | **611.3 sent/s** | 73.6 sent/s |
+| 32 | 1.62 ms | 13.93 ms | **616.0 sent/s** | 71.8 sent/s |
+| 128 | 1.68 ms | 15.31 ms | **596.5 sent/s** | 65.3 sent/s |
+
+### Model: BAAI/bge-small-en-v1.5 (CLS Pooling)
+
+| Metric | intextus (Q8_0) | fastembed (ONNX) | Speedup / Savings |
+| :--- | :---: | :---: | :---: |
+| Model Load Time | 1586.2 ms | 464.9 ms | 0.29x |
+| Single Latency (Mean) | 4.06 ms | 5.24 ms | **1.29x** |
+| Single Latency (p50) | 3.88 ms | 5.18 ms | **1.33x** |
+| Single Latency (p95) | 4.67 ms | 5.61 ms | - |
+| Peak RSS Memory | 140.2 MB | 368.3 MB | **2.63x less** |
+
+**Batch Latency & Throughput**
+
+| Batch Size | intextus Latency (per-sent) | fastembed Latency (per-sent) | intextus Throughput | fastembed Throughput |
+| :---: | :---: | :---: | :---: | :---: |
+| 1 | 2.96 ms | 4.64 ms | **337.3 sent/s** | 215.4 sent/s |
+| 4 | 3.24 ms | 2.43 ms | **308.9 sent/s** | 411.1 sent/s |
+| 8 | 3.25 ms | 2.31 ms | **308.1 sent/s** | 432.3 sent/s |
+| 32 | 3.36 ms | 2.18 ms | **297.9 sent/s** | 459.5 sent/s |
+| 128 | 3.37 ms | 3.51 ms | **297.1 sent/s** | 285.2 sent/s |
+
 ## Advanced: Compile from Source (Hardware Acceleration)
 
 By default, pre-built binary wheels are compiled with native SIMD instructions (AVX2/AVX-512/ARM NEON) for maximum CPU portability. If you are compiling from source and want to link against optimized system BLAS backends, pass the appropriate CMake arguments during installation:
