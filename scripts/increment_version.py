@@ -43,22 +43,44 @@ def update_pyproject_version(new_version):
         f.write(new_content)
     print(f"Successfully updated pyproject.toml version to: {new_version}")
 
+def get_local_version():
+    with open("pyproject.toml", "r") as f:
+        content = f.read()
+    match = re.search(r'version\s*=\s*"([^"]+)"', content)
+    if match:
+        return match.group(1)
+    return "0.1.0"
+
+def parse_version(version_str):
+    if not version_str:
+        return (0, 0, 0)
+    version_clean = version_str.split('-')[0]
+    parts = version_clean.split('.')
+    try:
+        return tuple(int(part) for part in parts)
+    except ValueError:
+        return (0, 0, 0)
+
 def main():
-    package_name = "intextus-embed"
+    package_name = "intextus-embed-ggml"
+    local_version = get_local_version()
+    print(f"Local version in pyproject.toml: {local_version}")
+    
     current_pypi_version = get_latest_pypi_version(package_name)
     print(f"Current PyPI version: {current_pypi_version}")
     
     if not current_pypi_version:
-        # Read from pyproject.toml to preserve initial version
-        with open("pyproject.toml", "r") as f:
-            content = f.read()
-        match = re.search(r'version\s*=\s*"([^"]+)"', content)
-        if match:
-            new_version = match.group(1)
-        else:
-            new_version = "0.1.0"
+        new_version = local_version
     else:
-        new_version = increment_version(current_pypi_version)
+        local_parsed = parse_version(local_version)
+        pypi_parsed = parse_version(current_pypi_version)
+        
+        if local_parsed > pypi_parsed:
+            print(f"Local version {local_version} is ahead of PyPI version {current_pypi_version}. Using local version.")
+            new_version = local_version
+        else:
+            new_version = increment_version(current_pypi_version)
+            print(f"Local version {local_version} is <= PyPI version {current_pypi_version}. Incrementing PyPI version to {new_version}.")
         
     update_pyproject_version(new_version)
 
