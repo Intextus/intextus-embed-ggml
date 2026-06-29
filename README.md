@@ -61,26 +61,17 @@ uv run --group benchmark python scripts/benchmark.py
 uv run python scripts/benchmark_accuracy.py
 ```
 
-### Performance Visualization
+### Benchmark Results & Visualizations
 
-Here is the latency, throughput scaling, and peak memory usage comparison between `intextus` and `fastembed`:
-
-#### 1. Single Sentence Latency (Lower is Better)
-![Latency Comparison](assets/latency_comparison.png)
-
-#### 2. Throughput Scaling (Higher is Better)
-![Throughput Scaling](assets/throughput_comparison.png)
-
-#### 3. Peak Memory Footprint (Lower is Better)
-![Memory Comparison](assets/memory_comparison.png)
-
----
-
-### Detailed Benchmark Results
-
-Below is the raw comparison data measured on AMD64 CPU (Linux):
+Below is the comparison data and performance charts measured on AMD64 CPU (Linux):
 
 ### Model: sentence-transformers/all-MiniLM-L6-v2 (Mean Pooling)
+
+<p align="center">
+  <img src="assets/minilm_latency.png" alt="MiniLM Latency" width="250" />
+  <img src="assets/minilm_memory.png" alt="MiniLM Memory" width="250" />
+</p>
+
 
 | Metric | intextus (Q8_0) | fastembed (ONNX) | Speedup / Savings |
 | :--- | :---: | :---: | :---: |
@@ -92,6 +83,10 @@ Below is the raw comparison data measured on AMD64 CPU (Linux):
 
 **Batch Latency & Throughput**
 
+<p align="center">
+  <img src="assets/minilm_throughput.png" alt="MiniLM Throughput" width="350" />
+</p>
+
 | Batch Size | intextus Latency (per-sent) | fastembed Latency (per-sent) | intextus Throughput | fastembed Throughput |
 | :---: | :---: | :---: | :---: | :---: |
 | 1 | 1.44 ms | 9.43 ms | **692.8 sent/s** | 106.0 sent/s |
@@ -102,6 +97,12 @@ Below is the raw comparison data measured on AMD64 CPU (Linux):
 
 ### Model: BAAI/bge-small-en-v1.5 (CLS Pooling)
 
+<p align="center">
+  <img src="assets/bge_latency.png" alt="BGE Latency" width="250" />
+  <img src="assets/bge_memory.png" alt="BGE Memory" width="250" />
+</p>
+
+
 | Metric | intextus (Q8_0) | fastembed (ONNX) | Speedup / Savings |
 | :--- | :---: | :---: | :---: |
 | Model Load Time | 1586.2 ms | 464.9 ms | 0.29x |
@@ -111,6 +112,10 @@ Below is the raw comparison data measured on AMD64 CPU (Linux):
 | Peak RSS Memory | 140.2 MB | 368.3 MB | **2.63x less** |
 
 **Batch Latency & Throughput**
+
+<p align="center">
+  <img src="assets/bge_throughput.png" alt="BGE Throughput" width="350" />
+</p>
 
 | Batch Size | intextus Latency (per-sent) | fastembed Latency (per-sent) | intextus Throughput | fastembed Throughput |
 | :---: | :---: | :---: | :---: | :---: |
