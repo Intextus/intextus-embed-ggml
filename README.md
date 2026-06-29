@@ -68,8 +68,8 @@ Below is the comparison data and performance charts measured on AMD64 CPU (Linux
 ### Model: sentence-transformers/all-MiniLM-L6-v2 (Mean Pooling)
 
 <p align="center">
-  <img src="assets/minilm_latency.png" alt="MiniLM Latency" width="250" />
-  <img src="assets/minilm_memory.png" alt="MiniLM Memory" width="250" />
+  <img src="assets/minilm_latency.png" alt="MiniLM Latency" width="320" />
+  <img src="assets/minilm_memory.png" alt="MiniLM Memory" width="320" />
 </p>
 
 
@@ -84,7 +84,7 @@ Below is the comparison data and performance charts measured on AMD64 CPU (Linux
 **Batch Latency & Throughput**
 
 <p align="center">
-  <img src="assets/minilm_throughput.png" alt="MiniLM Throughput" width="350" />
+  <img src="assets/minilm_throughput.png" alt="MiniLM Throughput" width="450" />
 </p>
 
 | Batch Size | intextus Latency (per-sent) | fastembed Latency (per-sent) | intextus Throughput | fastembed Throughput |
@@ -98,8 +98,8 @@ Below is the comparison data and performance charts measured on AMD64 CPU (Linux
 ### Model: BAAI/bge-small-en-v1.5 (CLS Pooling)
 
 <p align="center">
-  <img src="assets/bge_latency.png" alt="BGE Latency" width="250" />
-  <img src="assets/bge_memory.png" alt="BGE Memory" width="250" />
+  <img src="assets/bge_latency.png" alt="BGE Latency" width="320" />
+  <img src="assets/bge_memory.png" alt="BGE Memory" width="320" />
 </p>
 
 
@@ -114,7 +114,7 @@ Below is the comparison data and performance charts measured on AMD64 CPU (Linux
 **Batch Latency & Throughput**
 
 <p align="center">
-  <img src="assets/bge_throughput.png" alt="BGE Throughput" width="350" />
+  <img src="assets/bge_throughput.png" alt="BGE Throughput" width="450" />
 </p>
 
 | Batch Size | intextus Latency (per-sent) | fastembed Latency (per-sent) | intextus Throughput | fastembed Throughput |
