@@ -61,7 +61,24 @@ uv run --group benchmark python scripts/benchmark.py
 uv run python scripts/benchmark_accuracy.py
 ```
 
-Measured on AMD64 CPU (Linux) comparing `intextus` (Q8_0 quantization) against `fastembed` (ONNX Runtime):
+### Performance Visualization
+
+Here is the latency, throughput scaling, and peak memory usage comparison between `intextus` and `fastembed`:
+
+#### 1. Single Sentence Latency (Lower is Better)
+![Latency Comparison](assets/latency_comparison.png)
+
+#### 2. Throughput Scaling (Higher is Better)
+![Throughput Scaling](assets/throughput_comparison.png)
+
+#### 3. Peak Memory Footprint (Lower is Better)
+![Memory Comparison](assets/memory_comparison.png)
+
+---
+
+### Detailed Benchmark Results
+
+Below is the raw comparison data measured on AMD64 CPU (Linux):
 
 ### Model: sentence-transformers/all-MiniLM-L6-v2 (Mean Pooling)
 
