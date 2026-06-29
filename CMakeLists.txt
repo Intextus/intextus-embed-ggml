@@ -19,6 +19,7 @@ FetchContent_Declare(
     tokenizers-cpp
     GIT_REPOSITORY https://github.com/mlc-ai/tokenizers-cpp.git
     GIT_TAG        main
+    GIT_SHALLOW    TRUE
 )
 
 FetchContent_GetProperties(tokenizers-cpp)
@@ -62,6 +63,7 @@ FetchContent_Declare(
     llama_cpp
     GIT_REPOSITORY https://github.com/ggml-org/llama.cpp.git
     GIT_TAG        b3201 # Stable release tag
+    GIT_SHALLOW    TRUE
 )
 FetchContent_MakeAvailable(llama_cpp)
 
