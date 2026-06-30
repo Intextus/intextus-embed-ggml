@@ -4,7 +4,7 @@ build-backend = "scikit_build_core.build"
 
 [project]
 name = "intextus-embed-ggml"
-version = "0.1.7"
+version = "0.1.8"
 description = "A lightweight, zero-PyTorch GGML/GGUF encoder for generic dense embedding models."
 readme = "README.md"
 requires-python = ">=3.9"
