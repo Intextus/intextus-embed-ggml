@@ -58,10 +58,11 @@ nanobind_add_module(
 # 5. Link libraries
 target_link_libraries(_core PRIVATE llama)
 
-# Statically link libgcc/libstdc++ on Linux for manylinux portability
-if(UNIX AND NOT APPLE)
-    target_link_options(_core PRIVATE -static-libgcc -static-libstdc++)
-endif()
+# Note: We do NOT use -static-libgcc or -static-libstdc++ because statically linking
+# standard C++ libraries into a Python extension module causes segmentation faults
+# (e.g. std::codecvt / std::locale collisions) when dynamically loaded alongside
+# Python and NumPy. cibuildwheel's auditwheel automatically handles copying and
+# renaming libstdc++.so for broad manylinux compatibility.
 
 # Configure RPATH for the extension module to find libraries in the same directory
 if(APPLE)
