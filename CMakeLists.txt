@@ -12,6 +12,13 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+# Fix manylinux_2_28 aarch64 compatibility: newer GCC generates outline atomic
+# calls (__aarch64_ldadd4_acq_rel, etc.) that require glibc 2.31+ symbols.
+# Using -mno-outline-atomics forces inline atomics, keeping glibc <= 2.28.
+if(CMAKE_SYSTEM_PROCESSOR STREQUAL "aarch64" AND UNIX AND NOT APPLE)
+    add_compile_options(-mno-outline-atomics)
+endif()
+
 include(FetchContent)
 
 # 2. Fetch llama.cpp
@@ -50,6 +57,11 @@ nanobind_add_module(
 
 # 5. Link libraries
 target_link_libraries(_core PRIVATE llama)
+
+# Statically link libgcc/libstdc++ on Linux for manylinux portability
+if(UNIX AND NOT APPLE)
+    target_link_options(_core PRIVATE -static-libgcc -static-libstdc++)
+endif()
 
 # Configure RPATH for the extension module to find libraries in the same directory
 if(APPLE)
