@@ -544,7 +544,7 @@ wheels = [
 
 [[package]]
 name = "intextus-embed-ggml"
-version = "0.1.6"
+version = "0.1.7"
 source = { editable = "." }
 dependencies = [
     { name = "huggingface-hub", version = "1.8.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },

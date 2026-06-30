@@ -4,7 +4,6 @@
 #include <nanobind/stl/vector.h>
 
 #include <llama.h>
-#include <tokenizers_cpp.h>
 
 #include <vector>
 #include <string>
@@ -18,18 +17,6 @@
 #include <thread>
 
 namespace nb = nanobind;
-
-static std::string LoadBytesFromFile(const std::string& path) {
-    std::ifstream fs(path, std::ios::binary | std::ios::ate);
-    if (!fs.is_open()) {
-        throw std::runtime_error("Failed to open file: " + path);
-    }
-    auto size = fs.tellg();
-    fs.seekg(0, std::ios::beg);
-    std::string buf(size, '\0');
-    fs.read(buf.data(), size);
-    return buf;
-}
 
 class IntextusEncoder {
 public:
@@ -46,10 +33,6 @@ public:
         sep_token_id_(sep_token_id),
         pooling_type_(pooling_type) {
 
-        // Load tokenizer
-        std::string tok_blob = LoadBytesFromFile(tokenizer_path);
-        tokenizer_ = tokenizers::Tokenizer::FromBlobJSON(tok_blob);
-
         // Load model
         llama_backend_init();
 
@@ -59,6 +42,17 @@ public:
             throw std::runtime_error("Failed to load GGUF model: " + gguf_path);
         }
 
+        // Dynamically resolve CLS and SEP token IDs from model vocabulary if they are default or unset
+        const struct llama_vocab * vocab = llama_model_get_vocab(llama_model_);
+        if (cls_token_id_ <= 0) {
+            cls_token_id_ = llama_vocab_bos(vocab);
+            if (cls_token_id_ < 0) cls_token_id_ = 101; // BERT default
+        }
+        if (sep_token_id_ <= 0) {
+            sep_token_id_ = llama_vocab_sep(vocab);
+            if (sep_token_id_ < 0) sep_token_id_ = llama_vocab_eos(vocab);
+            if (sep_token_id_ < 0) sep_token_id_ = 102; // BERT default
+        }
         llama_context_params ctx_params = llama_context_default_params();
         ctx_params.embeddings = true;
         int actual_threads = num_threads;
@@ -121,7 +115,15 @@ public:
                     text_ptr = &lower_buf;
                 }
 
-                std::vector<int> raw_ids = tokenizer_->Encode(*text_ptr);
+                // Tokenize using llama.cpp native tokenizer
+                const struct llama_vocab * vocab = llama_model_get_vocab(llama_model_);
+                std::vector<llama_token> raw_ids(text_ptr->length() + 4);
+                int32_t n_tokens = llama_tokenize(vocab, text_ptr->c_str(), text_ptr->length(), raw_ids.data(), raw_ids.size(), false, true);
+                if (n_tokens < 0) {
+                    raw_ids.resize(-n_tokens);
+                    n_tokens = llama_tokenize(vocab, text_ptr->c_str(), text_ptr->length(), raw_ids.data(), raw_ids.size(), false, true);
+                }
+                raw_ids.resize(std::max(0, n_tokens));
 
                 // Setup sequence with [CLS] and [SEP]
                 std::vector<int64_t> seq;
@@ -216,7 +218,6 @@ public:
 private:
     struct llama_model * llama_model_ = nullptr;
     struct llama_context * llama_ctx_ = nullptr;
-    std::unique_ptr<tokenizers::Tokenizer> tokenizer_;
 
     bool do_lower_case_;
     int cls_token_id_ = -1;

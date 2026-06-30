@@ -14,41 +14,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 include(FetchContent)
 
-# 1. Fetch tokenizers-cpp
-FetchContent_Declare(
-    tokenizers-cpp
-    GIT_REPOSITORY https://github.com/mlc-ai/tokenizers-cpp.git
-    GIT_TAG        main
-    GIT_SHALLOW    TRUE
-)
-
-FetchContent_GetProperties(tokenizers-cpp)
-if(NOT tokenizers-cpp_POPULATED)
-    FetchContent_Populate(tokenizers-cpp)
-    
-    # Patch tokenizers-cpp/CMakeLists.txt to not hardcode aarch64-unknown-linux-gnu cross-compilers
-    # since we are compiling inside native aarch64 docker containers under QEMU emulation.
-    set(TC_CMAKE_FILE "${tokenizers-cpp_SOURCE_DIR}/CMakeLists.txt")
-    if(EXISTS "${TC_CMAKE_FILE}")
-        file(READ "${TC_CMAKE_FILE}" TC_CMAKE_CONTENT)
-        string(REPLACE
-            "AR_\${TOKENIZERS_CPP_CARGO_TARGET}=\${TOOLCHAIN_DIR}\${TOKENIZERS_CPP_CARGO_TARGET}-ar"
-            "AR_\${TOKENIZERS_CPP_CARGO_TARGET}=ar"
-            TC_CMAKE_CONTENT "${TC_CMAKE_CONTENT}")
-        string(REPLACE
-            "CC_\${TOKENIZERS_CPP_CARGO_TARGET}=\${TOOLCHAIN_DIR}\${TOKENIZERS_CPP_CARGO_TARGET}-gcc"
-            "CC_\${TOKENIZERS_CPP_CARGO_TARGET}=gcc"
-            TC_CMAKE_CONTENT "${TC_CMAKE_CONTENT}")
-        string(REPLACE
-            "CXX_\${TOKENIZERS_CPP_CARGO_TARGET}=\${TOOLCHAIN_DIR}\${TOKENIZERS_CPP_CARGO_TARGET}-g++"
-            "CXX_\${TOKENIZERS_CPP_CARGO_TARGET}=g++"
-            TC_CMAKE_CONTENT "${TC_CMAKE_CONTENT}")
-        file(WRITE "${TC_CMAKE_FILE}" "${TC_CMAKE_CONTENT}")
-    endif()
-
-    add_subdirectory(${tokenizers-cpp_SOURCE_DIR} ${tokenizers-cpp_BINARY_DIR})
-endif()
-
 # 2. Fetch llama.cpp
 # Disable examples/tests to speed up build
 set(BUILD_SHARED_LIBS OFF CACHE BOOL "Build shared libraries" FORCE)
@@ -84,7 +49,7 @@ nanobind_add_module(
 )
 
 # 5. Link libraries
-target_link_libraries(_core PRIVATE tokenizers_cpp llama)
+target_link_libraries(_core PRIVATE llama)
 
 # Configure RPATH for the extension module to find libraries in the same directory
 if(APPLE)

@@ -122,7 +122,7 @@ class DenseEncoder:
             raise FileNotFoundError(f"GGUF model file not found at {gguf_path}")
             
         if tokenizer_path is None or not os.path.exists(tokenizer_path):
-            raise FileNotFoundError(f"Tokenizer file not found at {tokenizer_path}")
+            tokenizer_path = ""
             
         # Resolve do_lower_case from tokenizer_config.json if not specified
         if do_lower_case is None:
@@ -144,18 +144,19 @@ class DenseEncoder:
 
         # Determine token IDs dynamically if not provided
         vocab_tokens = {}
-        try:
-            import json
-            with open(tokenizer_path, 'r', encoding='utf-8') as f:
-                tok_data = json.load(f)
-            vocab = tok_data.get("model", {}).get("vocab", {})
-            if vocab:
-                if isinstance(vocab, list):
-                    vocab_tokens = {item[0] if isinstance(item, list) else item: i for i, item in enumerate(vocab)}
-                else:
-                    vocab_tokens = vocab
-        except Exception:
-            pass
+        if tokenizer_path:
+            try:
+                import json
+                with open(tokenizer_path, 'r', encoding='utf-8') as f:
+                    tok_data = json.load(f)
+                vocab = tok_data.get("model", {}).get("vocab", {})
+                if vocab:
+                    if isinstance(vocab, list):
+                        vocab_tokens = {item[0] if isinstance(item, list) else item: i for i, item in enumerate(vocab)}
+                    else:
+                        vocab_tokens = vocab
+            except Exception:
+                pass
 
         # Try to find standard CLS/SEP IDs
         default_cls_id = vocab_tokens.get("[CLS]", vocab_tokens.get("<s>", 101))
@@ -181,20 +182,21 @@ class DenseEncoder:
 
         # Read and modify tokenizer.json to disable padding if configured
         self._temp_tokenizer_file = None
-        try:
-            import json
-            import tempfile
-            with open(tokenizer_path, 'r', encoding='utf-8') as f:
-                tok_data = json.load(f)
-            if tok_data.get("padding") is not None:
-                tok_data["padding"] = None
-                fd, temp_path = tempfile.mkstemp(suffix=".json", prefix="intextus_tokenizer_")
-                with os.fdopen(fd, 'w', encoding='utf-8') as f_out:
-                    json.dump(tok_data, f_out)
-                self._temp_tokenizer_file = temp_path
-                tokenizer_path = temp_path
-        except Exception:
-            pass
+        if tokenizer_path:
+            try:
+                import json
+                import tempfile
+                with open(tokenizer_path, 'r', encoding='utf-8') as f:
+                    tok_data = json.load(f)
+                if tok_data.get("padding") is not None:
+                    tok_data["padding"] = None
+                    fd, temp_path = tempfile.mkstemp(suffix=".json", prefix="intextus_tokenizer_")
+                    with os.fdopen(fd, 'w', encoding='utf-8') as f_out:
+                        json.dump(tok_data, f_out)
+                    self._temp_tokenizer_file = temp_path
+                    tokenizer_path = temp_path
+            except Exception:
+                pass
 
         # Initialize C++ core encoder with direct GGUF and tokenizer path
         self._encoder = CppIntextusEncoder(
