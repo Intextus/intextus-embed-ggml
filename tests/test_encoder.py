@@ -108,3 +108,17 @@ def test_bge_embedding_end_to_end():
     assert not np.allclose(embs[0], 0.0)
     assert not np.allclose(embs[0], embs[1])
 
+
+def test_denseon_embedding_end_to_end():
+    # End-to-end validation with the real DenseOn C++ engine and GGUF model (CLS pooling, 768 dims)
+    print("\nRunning real DenseOn embedding test...")
+    encoder = DenseEncoder("lightonai/DenseOn", quantization="Q8_0")
+    texts = ["hello world", "denseon model uses cls pooling and has 768 dimensions"]
+    embs = encoder.encode(texts, max_length=128, normalize=True)
+    
+    assert embs.shape == (2, 768)
+    norm = np.linalg.norm(embs[0])
+    assert np.allclose(norm, 1.0, atol=1e-5)
+    assert not np.allclose(embs[0], 0.0)
+    assert not np.allclose(embs[0], embs[1])
+

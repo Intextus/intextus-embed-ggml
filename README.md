@@ -138,6 +138,12 @@ Below is the cosine similarity accuracy comparison of different quantization for
 
 > 💡 **Tip:** For small embedding models like MiniLM and BGE-small, 8-bit quantization (`Q8_0`) is the absolute sweet spot, retaining **99.96% accuracy** while reducing memory footprint and load times. Lower bit-depths like 4-bit (`Q4_0`) suffer noticeable quality loss due to the small parameter capacity of these architectures.
 
+### Model: lightonai/DenseOn (ModernBERT, CLS Pooling)
+
+We have conducted a detailed evaluation of accuracy loss, file size compression, and CPU inference latency across all 9 quantization formats of the `lightonai/DenseOn` model (ranging from Float32 to 2-bit quantization). 
+
+For detailed tables, recommendation guides, and performance charts, please read the full [DenseOn Quantization & Accuracy Report](accuracy_report.md).
+
 ## Advanced: Compile from Source (Hardware Acceleration)
 
 By default, pre-built binary wheels are compiled with native SIMD instructions (AVX2/AVX-512/ARM NEON) for maximum CPU portability. If you are compiling from source and want to link against optimized system BLAS backends, pass the appropriate CMake arguments during installation:

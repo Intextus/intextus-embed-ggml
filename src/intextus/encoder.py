@@ -72,6 +72,8 @@ class DenseEncoder:
                 repo_id = "intextus/all-MiniLM-L6-v2-GGUF"
             elif repo_id == "BAAI/bge-small-en-v1.5":
                 repo_id = "intextus/bge-small-en-v1.5-GGUF"
+            elif repo_id == "lightonai/DenseOn":
+                repo_id = "intextus/DenseOn-GGUF"
                 
             try:
                 from huggingface_hub import HfApi, hf_hub_download
@@ -164,7 +166,7 @@ class DenseEncoder:
 
         # Determine pooling mode and type
         if pooling_mode is None:
-            if "bge" in model_name_or_path.lower():
+            if "bge" in model_name_or_path.lower() or "denseon" in model_name_or_path.lower():
                 pooling_mode = "cls"
             else:
                 pooling_mode = "mean"
@@ -231,3 +233,14 @@ class DenseEncoder:
             dim = getattr(self._encoder, "model_embd_dim_", 384)
             return np.zeros((0, dim), dtype=np.float32)
         return self._encoder.encode(texts, max_length, normalize)
+
+    @staticmethod
+    def list_supported_models() -> List[str]:
+        """
+        Returns a list of supported model names/IDs.
+        """
+        return [
+            "sentence-transformers/all-MiniLM-L6-v2",
+            "BAAI/bge-small-en-v1.5",
+            "lightonai/DenseOn"
+        ]
