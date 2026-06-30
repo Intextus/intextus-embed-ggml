@@ -41,6 +41,23 @@ model = DenseEncoder("./my-local-model-directory/")
 model = DenseEncoder("./models/all-MiniLM-L6-v2-Q8_0.gguf")
 ```
 
+### Supported Out-of-the-Box Models
+
+The engine automatically handles GGUF model downloading, caching, and pooling settings for the following pre-quantized models hosted on Hugging Face:
+
+- `sentence-transformers/all-MiniLM-L6-v2` (default, Mean Pooling, 384 dimensions)
+- `BAAI/bge-small-en-v1.5` (CLS Pooling, 384 dimensions)
+- `lightonai/DenseOn` (ModernBERT architecture, CLS Pooling, 768 dimensions)
+
+You can query the list programmatically:
+
+```python
+from intextus import DenseEncoder
+
+print(DenseEncoder.list_supported_models())
+# ['sentence-transformers/all-MiniLM-L6-v2', 'BAAI/bge-small-en-v1.5', 'lightonai/DenseOn']
+```
+
 ## Configuration Options
 
 - `model_name_or_path`: Local path to a GGUF file or directory, or a Hugging Face Hub model ID (defaults to `"sentence-transformers/all-MiniLM-L6-v2"`).
@@ -142,7 +159,7 @@ Below is the cosine similarity accuracy comparison of different quantization for
 
 We have conducted a detailed evaluation of accuracy loss, file size compression, and CPU inference latency across all 9 quantization formats of the `lightonai/DenseOn` model (ranging from Float32 to 2-bit quantization). 
 
-For detailed tables, recommendation guides, and performance charts, please read the full [DenseOn Quantization & Accuracy Report](accuracy_report.md).
+For detailed tables, recommendation guides, and performance charts, please read the full [DenseOn Quantization & Accuracy Results](accuracy_report.md).
 
 ## Advanced: Compile from Source (Hardware Acceleration)
 

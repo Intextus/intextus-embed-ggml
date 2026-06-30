@@ -1,6 +1,6 @@
-# DenseOn Quantization & Accuracy Report
+# DenseOn Quantization & Accuracy Results
 
-This report evaluates the accuracy loss, file size reduction, and inference performance across various quantization configurations of the `lightonai/DenseOn` embedding model using the `intextus-embed-ggml` C++ inference backend.
+This shows the accuracy loss, file size reduction, and inference performance across various quantization configurations of the `lightonai/DenseOn` embedding model using the `intextus-embed-ggml` C++ inference backend.
 
 ## Evaluation Methodology
 

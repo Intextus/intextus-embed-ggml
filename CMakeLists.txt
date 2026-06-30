@@ -51,6 +51,7 @@ endif()
 
 # 2. Fetch llama.cpp
 # Disable examples/tests to speed up build
+set(BUILD_SHARED_LIBS OFF CACHE BOOL "Build shared libraries" FORCE)
 set(LLAMA_BUILD_TESTS OFF CACHE BOOL "Disable tests" FORCE)
 set(LLAMA_BUILD_EXAMPLES OFF CACHE BOOL "Disable examples" FORCE)
 set(LLAMA_BUILD_SERVER OFF CACHE BOOL "Disable server" FORCE)
