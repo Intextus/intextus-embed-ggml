@@ -54,7 +54,7 @@ public:
         llama_backend_init();
 
         llama_model_params model_params = llama_model_default_params();
-        llama_model_ = llama_load_model_from_file(gguf_path.c_str(), model_params);
+        llama_model_ = llama_model_load_from_file(gguf_path.c_str(), model_params);
         if (!llama_model_) {
             throw std::runtime_error("Failed to load GGUF model: " + gguf_path);
         }
@@ -69,15 +69,15 @@ public:
         ctx_params.n_threads_batch = actual_threads;
         ctx_params.n_ctx = 512;
         ctx_params.n_batch = 512;
-        ctx_params.flash_attn = true;
+        ctx_params.flash_attn_type = LLAMA_FLASH_ATTN_TYPE_ENABLED;
         ctx_params.pooling_type = LLAMA_POOLING_TYPE_NONE;
 
-        llama_ctx_ = llama_new_context_with_model(llama_model_, ctx_params);
+        llama_ctx_ = llama_init_from_model(llama_model_, ctx_params);
         if (!llama_ctx_) {
             throw std::runtime_error("Failed to create llama.cpp context");
         }
 
-        model_embd_dim_ = llama_n_embd(llama_model_);
+        model_embd_dim_ = llama_model_n_embd(llama_model_);
     }
 
     ~IntextusEncoder() {
@@ -85,7 +85,7 @@ public:
             llama_free(llama_ctx_);
         }
         if (llama_model_) {
-            llama_free_model(llama_model_);
+            llama_model_free(llama_model_);
         }
     }
 
@@ -140,7 +140,7 @@ public:
 
                 size_t decode_len = seq.size();
 
-                llama_kv_cache_clear(llama_ctx_);
+                llama_memory_clear(llama_get_memory(llama_ctx_), true);
                 llama_batch batch = llama_batch_init(decode_len, 0, 1);
                 batch.n_tokens = decode_len;
 

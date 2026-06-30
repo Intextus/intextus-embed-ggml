@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.19...3.30)
-project(intextus_backend LANGUAGES CXX)
+project(intextus_backend LANGUAGES C CXX)
 
 if(POLICY CMP0169)
     cmake_policy(SET CMP0169 OLD)
@@ -62,7 +62,7 @@ set(LLAMA_METAL OFF CACHE BOOL "Disable Metal" FORCE)
 FetchContent_Declare(
     llama_cpp
     GIT_REPOSITORY https://github.com/ggml-org/llama.cpp.git
-    GIT_TAG        b3201 # Stable release tag
+    GIT_TAG        b8500 # Stable release tag
     GIT_SHALLOW    TRUE
 )
 FetchContent_MakeAvailable(llama_cpp)
@@ -88,12 +88,12 @@ target_link_libraries(_core PRIVATE tokenizers_cpp llama)
 # Configure RPATH for the extension module to find libraries in the same directory
 if(APPLE)
     set_target_properties(_core PROPERTIES
-        INSTALL_RPATH "@loader_path"
+        INSTALL_RPATH "@loader_path;@loader_path/../lib"
         BUILD_WITH_INSTALL_RPATH TRUE
     )
 elseif(UNIX)
     set_target_properties(_core PROPERTIES
-        INSTALL_RPATH "$ORIGIN"
+        INSTALL_RPATH "$ORIGIN;$ORIGIN/../lib"
         BUILD_WITH_INSTALL_RPATH TRUE
     )
 endif()
