@@ -112,8 +112,8 @@ jobs:
           CIBW_SKIP: "*-win32 *-manylinux_i686 *musllinux*"
           CIBW_BEFORE_BUILD: "env && pip install nanobind scikit-build-core"
           CIBW_ENVIRONMENT_LINUX: CMAKE_ARGS="-DGGML_NATIVE=OFF"
-          CIBW_MANYLINUX_X86_64_IMAGE: "manylinux_2_28"
-          CIBW_MANYLINUX_AARCH64_IMAGE: "manylinux_2_28"
+          CIBW_MANYLINUX_X86_64_IMAGE: "manylinux_2_34"
+          CIBW_MANYLINUX_AARCH64_IMAGE: "manylinux_2_34"
           CIBW_TEST_REQUIRES: "pytest numpy huggingface-hub"
           CIBW_TEST_COMMAND: "pytest {project}/tests"
 
